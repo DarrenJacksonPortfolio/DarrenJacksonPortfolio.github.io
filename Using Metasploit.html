@@ -1,0 +1,58 @@
+<!DOCTYPE HTML>
+<!--
+	Hyperspace by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Using Metasploit</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Header -->
+			<header id="header">
+				<a href="index.html" class="title">Using Metasploit</a>
+			</header>
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Main -->
+					<section id="main" class="wrapper">
+						<div class="inner">
+							<h1 class="major">Using Metasploit</h1>
+							<span class="image fit"><img src="images/pic16.jpg" alt="" /></span>
+							<p>MetaSploit is an open source pentesting framework and contains many thoroughly tested exploits as well as auxiliary and post-exploitation tools. In this room I will be only going through the basics of what it has to offer. I followed the initial instructions to set up MetaSploit on my local VM and learned that MetaSploit uses a postgresql database. After initializing MetaSploit and doing some research with the “help” command I was able to answer the questions relating to the basic commands and identify the use cases of the various modules included in MetaSploit. One thing I learned from the lecture was that I could search for CVE codes and use them to attack vulnerable systems. In MetaSploit “db_nmap” commands use the same target specifications as the standard “nmap” commands and I am asked to enter the command “db_nmap -sV 10.10.**.**” where the “-sV” specification enables version detection. The results return 12 open TCP ports and Service Info: Host: DARK-PC; OS: Windows; CPE: cpe:/o:microsoft:windows. Following the task I run the following commands “hosts”, “services” and “vulns”. From the returned results I can see that the information from the “db_nmap” command has been stored in a database. The service that stands out is the Icecast streaming media server on port 8000 and given that streamed media would generally use a UDP connection this port is using a TCP connection.</p>
+							<p>When I run the “search icecast” command it shows me a known exploit that attacks using a page header overwrite. The task tells me to enter the command “use icecast” but this isn’t the exploit I need so I use the command “search multi/handler” and returned one auxiliary scanner and eight exploits. Of the eight exploits, seven of them were for specific operating systems and one with an exact match to multi/handler. Then I run the command “search windows/meterpreter/reverse_tcp” and find out that the payload I have been asked to use uses reflective injection. Now I run the command “set PAYLOAD windows/meterpreter/reverse_tcp”. With that all set up all I need to do now is set the LHOST (the IP I am attacking from) and RHOST (the IP I am attacking) so using the relevant commands I set these according to the IP addresses provided by TryHackMe. The aim of this attack is to create a reverse shell by getting the target machine to request a shell on my localhost. Now I just enter the “exploit” command and start the attack.</p>
+							<p>Now I have control over the target machine I can use the command “sessions” to list all my active settings. This didn’t reveal much so I use the migrate function on the spoolsv.exe which also revealed nothing of interest. Following the task, I now need to run the “getuid” and “sysinfo” commands to do some more active recon. This reveals interesting information and I now have the computer name: DARK-PC and the OS: Windows 7 (6.1 Build 7601, Service Pack 1) along with other useful information. I was then asked to load Mimikatz or kiwi as it referred to in MetaSploit using the “load kiwi” command. Mimikatz was new to me, so I did a little research and learned that it is a fantastic little post exploitation tool with many great features for looking through an exploited machines data. MetaSploit comes with Mimikatz v1.0 however there is a v2.0 standalone version available. Now I am introduced to some post modules and start with a check to see if the target machine is a VM or not and it is in fact a Xen Virtual Machine. I then use the “run post/multi/recon/local_exploit_suggester” command, this module attempts to look for exploits available to elevate my privileges. From the results 9 potential vulnerabilities I could attempt to use to escalate my privileges. From the lecture I learned I could background my active session using the “^Z” command, now back in my MetaSploit session I can load the exploit/windows/local/bypassuac_eventvwr vulnerability found into MetaSploit ready to attack the machine again. With the command “sessions -I” I can see my active sessions and use the command “set session 1” to make that the target of the attack and then execute with the “exploit” command which has given me admin level access to the target machine. I learnt a lot about active recon and privilege escalation during this room.</p>
+							<p>On to Bolt the next room in the lecture, using what I have learnt so far, its time to start doing some recon. Firstly I run the “nmap -sV 10.10.**.**” command, which reveals three open ports 22, 80, 8000. Port 22 has an SSH connection the other two are web connections, so I look at them from a browser, port 80 is just a default apache open 2 page. Opening on port 8000 takes me to a Bolt page, after reading only this page I can see that Bolt is a CMS and that this port was intended to be a secret forum for the admins. From the two posts by and admin called Jake I can see that his username is “bolt”, and his password is “boltadmin123”. I can’t find a way to login from this port so I do some more recon on Bolt CMS login, and I go to boltcms.io and navigate to the docs section and find the login details where it tells me I can login from http://yourdomain.com/bolt. Now I can enter http://10.10.**.**:8000/bolt and I am taken to a login page. Using the admin Jakes credentials which takes me to the admin panel. Here I can see the version Bolt 3.7.1, now I can use MetaSploit to search any Bolt exploits returns two results and the Bolt CMS 3.7.0 - Authenticated Remote Code Execution is the one I want. Using the “info” and “options” commands on the exploit module and can learn how to set the exploit to use it. After setting the LHOST, RHOSTS, USERNAME, PASSWORD, RPORT and selecting the correct payload I can now use the command “exploit” gaining access. Now I use the “shell” command to open a command shell. Now using the “cd” and “ls” commands I can easily find the flag.txt in the home directory and use the “cat flag.txt” command reveal the flag to complete the room.</p>
+						</div>
+					</section>
+
+			</div>
+
+		<!-- Footer -->
+			<footer id="footer" class="wrapper alt">
+				<div class="inner">
+					<ul class="menu">
+						<li>&copy; Darren Jackson. All rights reserved.</li><li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
+					</ul>
+				</div>
+			</footer>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>
