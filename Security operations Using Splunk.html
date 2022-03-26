@@ -1,0 +1,65 @@
+<!DOCTYPE HTML>
+<!--
+	Hyperspace by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Security perations Using Splunk</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Header -->
+			<header id="header">
+				<a href="index.html" class="title">Security perations Using Splunk</a>
+				<nav>
+					<ul>
+						<li><a href="index.html">Home</a></li>
+					</ul>
+				</nav>
+			</header>
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Main -->
+					<section id="main" class="wrapper">
+						<div class="inner">
+							<h1 class="major">Security perations Using Splunk</h1>
+							<span class="image fit"><img src="images/pic12.jpg" alt="" /></span>
+							<p>Splunk uses machine learning with its analytics-driven Cloud Security Information and Event Management (SIEM). It is used by many security operations centers (SOC) to examine real time data and incident response. Splunk is a very in-depth tool for data analysis and visualization, however in order to use it you need a dataset to analyze. Due to how complex this data management system is I was initially overwhelmed by how much data I could query with the commands available. The lecture focused on the boss of the soc 2016 event with a crafted dataset representing an advanced persistent threat (APT) scenario where a website has been defaced and I must investigate it using the Lockheed Martin's Kill Chain; Reconnaissance – Weaponization – Delivery – Exploitation – Installation – Command and Control (C2) – Actions on Objectives. The kill chain is modelled on the U.S. military targeting doctrine and is described as a chain because any one deficiency will interrupt the entire process, the white paper from Lockheed Martin on Intel driven defence was an interesting and informative read. I had to do this room a few times to get comfortable using Splunk for data aggregation.</p>
+							<p>This is a run through the TryHackMe room while only using the information from the ATP prologue and the IOC worksheet 3 with the questions to complete the task. Finding the IP address scanning the server, starting with a clear search, and using the botsv1 index I search for imreallynotbatman.com which returns over 78,000 results. As I am looking for inbound traffic from an IP address, I can add the scr_ip=“*” ( the * is a wildcard so returns all instances within a field) to the search parameter reduces the returned results. Now I need to organize by IP address so then can use the pipe “|” command I can search for the source IP by using stats count by scr which show three IP addresses and a count of how many events are associated with each IP address. Based on the fact I know it is scanning was used in the reconnaissance the IP 40.80.148.42 with the most events is going to be the source of the scanning. Changing the wildcard value to the known IP address of the scanner and adding dest_ip="*" to the search field and changing the count by to dest_ip I get two results, one with 2 events and one with over 38,000 events so the server IP is 192.168.250.70 based on the amount of traffic. To find the CMS running I add the sourcetype= field to the search and use the “*” again to show all sources and I get four results. It is worth noting over 17,000 are from a suricata file source and is a intrusion detection, prevention and network security monitoring system. For the time being I will focus on the source with over 20,000 events, stream:http. Now I remove the stats from the search and add destination headers to the search field, my search now looks like this “index=botsv1 sourcetype="stream:http" src_ip="40.80.148.42" dest_ip="192.168.250.70" dest_headers="*"”. From here I need to aggregate it, so it shows the request count in descending order so pipe to show stats for requests and pipe to sort by reversing the count. This shows over 9,000 POST requests to a joomla directory and this is a CMS.</p>
+							<p>On to the exploitation questions, back to a basic search of “index=botsv1 sourcetype="stream:http" src_ip="*"”, piping to show stats for the source IP in descending order I can see a lot of events from the IP 23.22.63.144 so this is what I will investigate.Using what I have learned I input the search “index=botsv1 sourcetype="*" src_ip="23.22.63.114" http_method="POST" form_data="*" | stats count by form_data”, I like to use wildcards as a simple way to include fields to display data without overcomplicating my searches. This search shows the form data nicely tabled like so “username=admin&0960d493674eb04861bd64da9b662118=1&task=login&return=aW5kZXgucGhw&option=com_login&passwd=arthur” and there are over 412 events like this showing this is the IP responsible for the brute force attack. Then simply adding the _time field to the stats and sort by _time gives me the first password attempt of “12345678”, now I change the src_ip value to a wildcard and pipe to regex form_data=passwd then stats count by src shows a new IP 40.80.148.42. Changing the src value to the newly discovered IP and changing the stats count by to form_data it then shows the string containing the password “batman”. Again changing the src_ip to a wildcard the regex value to form_data=passwd=batman it returns 2 events with the same password being used. Then changing the stats value to src to confirm both correct logins were from the two identified IP addresses. Then my final search to aggregate the time between the two logins was “index=botsv1 sourcetype="*" src_ip="*" http_method="POST" form_data="*" | regex form_data=passwd=batman | stats range(_time) to show 92.17 seconds elapsed between logins.</p>
+							<p>Now I know the attackers IP address I can look for the installation, given what I know so far I use the search “index=botsv1 sourcetype="*" src_ip="40.80.148.42" http_method="POST" filename="*.exe"” and find 2 events. On inspection, after researching I learn that the  /_vti_bin/shtml.exe is used for determining the physical path of HTML and other protocols by requesting a none existent file returning a 404 error. This makes the 3791.exe the executable uploaded by P01s0n1vy. Using the search “index=botsv1 3791.exe CommandLine="3791.exe" | stats values(MD5)” returns the MD5 hash AAE3F5A29935E6ABCC2C2754D12A9AF0.</p>
+							<p>Actions on objective, first I search for P01s0n1vy as it is the name written on the defaced website with no luck. Then I search poisonivy and get one result, I aggregated it with the search “index=botsv1 sourcetype="*" poisonivy filename="*.*" | stats count by filename” to reveal the attackers .jpeg.</p>
+							<p>If I was to continue this blog would be extensive. But I feel I have shown that I have learned a lot since first attempting this room. I found the use of wildcards the most valuable in my early days. What I first found overwhelming I now feel comfortable effectively searching using Splunk.</p>
+						</div>
+					</section>
+
+			</div>
+
+		<!-- Footer -->
+			<footer id="footer" class="wrapper alt">
+				<div class="inner">
+					<ul class="menu">
+						<li>&copy; Darren Jackson. All rights reserved.</li><li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
+					</ul>
+				</div>
+			</footer>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>
