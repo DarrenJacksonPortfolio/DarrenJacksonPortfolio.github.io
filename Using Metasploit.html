@@ -16,7 +16,7 @@
 
 		<!-- Header -->
 			<header id="header">
-				<a href="index.html" class="title">Using Metasploit</a>
+				<a href="index.html" class="title">Using MetaSploit</a>
 			</header>
 
 		<!-- Wrapper -->
@@ -25,7 +25,7 @@
 				<!-- Main -->
 					<section id="main" class="wrapper">
 						<div class="inner">
-							<h1 class="major">Using Metasploit</h1>
+							<h1 class="major">Using MetaSploit</h1>
 							<span class="image fit"><img src="images/pic16.jpg" alt="" /></span>
 							<p>MetaSploit is an open source pentesting framework and contains many thoroughly tested exploits as well as auxiliary and post-exploitation tools. In this room I will be only going through the basics of what it has to offer. I followed the initial instructions to set up MetaSploit on my local VM and learned that MetaSploit uses a postgresql database. After initializing MetaSploit and doing some research with the “help” command I was able to answer the questions relating to the basic commands and identify the use cases of the various modules included in MetaSploit. One thing I learned from the lecture was that I could search for CVE codes and use them to attack vulnerable systems. In MetaSploit “db_nmap” commands use the same target specifications as the standard “nmap” commands and I am asked to enter the command “db_nmap -sV 10.10.**.**” where the “-sV” specification enables version detection. The results return 12 open TCP ports and Service Info: Host: DARK-PC; OS: Windows; CPE: cpe:/o:microsoft:windows. Following the task I run the following commands “hosts”, “services” and “vulns”. From the returned results I can see that the information from the “db_nmap” command has been stored in a database. The service that stands out is the Icecast streaming media server on port 8000 and given that streamed media would generally use a UDP connection this port is using a TCP connection.</p>
 							<p>When I run the “search icecast” command it shows me a known exploit that attacks using a page header overwrite. The task tells me to enter the command “use icecast” but this isn’t the exploit I need so I use the command “search multi/handler” and returned one auxiliary scanner and eight exploits. Of the eight exploits, seven of them were for specific operating systems and one with an exact match to multi/handler. Then I run the command “search windows/meterpreter/reverse_tcp” and find out that the payload I have been asked to use uses reflective injection. Now I run the command “set PAYLOAD windows/meterpreter/reverse_tcp”. With that all set up all I need to do now is set the LHOST (the IP I am attacking from) and RHOST (the IP I am attacking) so using the relevant commands I set these according to the IP addresses provided by TryHackMe. The aim of this attack is to create a reverse shell by getting the target machine to request a shell on my localhost. Now I just enter the “exploit” command and start the attack.</p>
